@@ -92,7 +92,6 @@ def show_chan_sampling(back=1):
         return 'posts en los ultimos {0:.1f} dias: ve -> {1}, arepa -> {2}'.format(days, posts_ve, posts_arepa)
 
 def chan_plot(k=0):
-    print(k)
     assert k == 0 or k >= 2
     def to_datetime(s):
         return datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S.%f")
@@ -115,60 +114,65 @@ def chan_plot(k=0):
     return f
 
 @bot.command()
+async def time(ctx):
+    if ctx.message.channel.name == 'otro':
+        await ctx.send('`{}`'.format(datetime.datetime.now()))
+
+@bot.command()
 async def chansplot(ctx, *args):
-    try:
-        assert len(args) <= 1
-        if len(args) == 0:
-            await ctx.send('`echale agua al caparazon de la tortuga, ole!`', file=discord.File(chan_plot(), filename='ole.png'))
-        else:
-            await ctx.send('`echale agua al caparazon de la tortuga, ole!`', file=discord.File(chan_plot(int(args[0])), filename='ole.png'))
-    except:
-        await ctx.send('`retrasado`')
-        raise
+    if ctx.message.channel.name == 'otro':
+        try:
+            assert len(args) <= 1
+            if len(args) == 0:
+                await ctx.send('`echale agua al caparazon de la tortuga, ole!`', file=discord.File(chan_plot(), filename='ole.png'))
+            else:
+                await ctx.send('`echale agua al caparazon de la tortuga, ole!`', file=discord.File(chan_plot(int(args[0])), filename='ole.png'))
+        except:
+            await ctx.send('`retrasado`')
+            raise
 
 @bot.command()
 async def chans(ctx, *args):
-    try:
-        if len(args) == 0:
-            await ctx.send('`'+show_chan_sampling()+'`')
-        else:
-            await ctx.send('`'+show_chan_sampling(int(args[0]))+'`')
-    except:
-        await ctx.send('`mongolico marico`')
+    if ctx.message.channel.name == 'otro':
+        try:
+            if len(args) == 0:
+                await ctx.send('`'+show_chan_sampling()+'`')
+            else:
+                await ctx.send('`'+show_chan_sampling(int(args[0]))+'`')
+        except:
+            await ctx.send('`mongolic@ maric@`')
 
 @bot.command()
 async def dice(ctx, *args):
-    try:
-        if len(args) == 1:
-            await ctx.send('`['+str(random.randint(1, int(args[0])))+']`')
-        else:
-            dice = [random.randint(1, int(args[0])) for x in range(int(args[1]))]
-            await ctx.send('`'+str(dice)+'`')
-    except:
-        await ctx.send('`'+str(random.randint(1, 6))+'`')
+    if ctx.message.channel.name in ('otro', 'juegos'):
+        try:
+            if len(args) == 1:
+                await ctx.send('`['+str(random.randint(1, int(args[0])))+']`')
+            else:
+                dice = [random.randint(1, int(args[0])) for x in range(int(args[1]))]
+                await ctx.send('`'+str(dice)+'`')
+        except:
+            await ctx.send('`'+str(random.randint(1, 6))+'`')
 
 @bot.command()
 async def calc(ctx, *args):
-    print(PRECIO_DOLAR)
-    try:
-        await ctx.send('`{}`'.format(currency.calc(''.join(args), PRECIO_DOLAR)))
-    except:
-        await ctx.send('`mongolico`')
+    if ctx.message.channel.name == 'otro':
+        try:
+            await ctx.send('`{}`'.format(currency.calc(''.join(args))))
+        except Exception as e:
+            await ctx.send('`mongolic@`')
+            raise e
 
 @bot.command()
 async def rolelock(ctx, *args):
     author_roles = ctx.author.roles
-    print(args)
     if (any([role.permissions.is_superset(discord.Permissions(268435456))
              for role in author_roles]) or
         ctx.guild.owner == ctx.author):
         try:
             role_id = int(re.search('\d+', args[1]).group(0))
-            print(role_id)
             member_id = int(re.search('\d+', args[2]).group(0))
-            print(member_id)
         except:
-            print('regex fail')
             await ctx.send('`mogolico`')
             return
         role = ctx.guild.get_role(role_id)
@@ -208,58 +212,66 @@ async def rolelock(ctx, *args):
                 else:
                     await ctx.send('`{} didn\'t have {} rolelock`'.format(member, role))
             else:
-                print('wrong usage')
                 await ctx.send('`mogolico`')
         else:
             print('role and member: {} and {}'.format(role, member))
             await ctx.send('`mogolico`')
     else:
-        print('no permissions')
         await ctx.send('`mogolico`')
 
 @bot.command()
 async def echo(ctx, *args):
-    await ctx.send(str(' '.join(args)))
+    if ctx.author.id != 427560696243552256:
+        await ctx.send(str(' '.join(args)))
 
 @bot.command()
 async def dolar(ctx, arg):
-    if arg == 'btc':
-        btc_price_url = 'https://coinbase.com/api/v1/prices/spot_rate'
-        localbtc_ticker_url ='https://localbitcoins.com/bitcoinaverage/ticker-all-currencies/'
+    if ctx.message.channel.name == 'otro':
+        if arg == 'btc':
+            btc_price_url = 'https://coinbase.com/api/v1/prices/spot_rate'
+            localbtc_ticker_url ='https://localbitcoins.com/bitcoinaverage/ticker-all-currencies/'
 
-        try:
-            btc_price_r = requests.get(btc_price_url)
-            localbtc_ticker_r  = requests.get(localbtc_ticker_url)
-        except:
-            message = 'no disponible'
-        else:
-            usdbtc = 1/currency.btc()
+            try:
+                btc_price_r = requests.get(btc_price_url)
+                localbtc_ticker_r  = requests.get(localbtc_ticker_url)
+            except:
+                message = 'no disponible'
+            else:
+                usdbtc = 1/currency.btc()
 
-            global PRECIO_DOLAR
-            PRECIO_DOLAR = float(localbtc_ticker_r.json()['VES']['avg_12h'])/float(usdbtc)
-            
-            ts = ['avg_1h', 'avg_6h', 'avg_12h', 'avg_24h']
-            ts = {'avg_1h': 'promedio una hora',
-                  'avg_6h': 'promedio seis horas',
-                  'avg_12h': 'promedio doce horas',
-                  'avg_24h': 'promedio veinticuatro horas',}
-            l = []
-            for t in ts:
-                try:
-                    l.append(' {}: {} bs/$'.format(ts[t], '%.2f' % (float(localbtc_ticker_r.json()['VES'][t])/float(usdbtc),)))
-                except Exception:
-                    pass
-            message = 'localbitcoins:\n{}'.format('\n'.join(l))
+                global PRECIO_DOLAR
+                
+                ts = ['avg_1h', 'avg_6h', 'avg_12h', 'avg_24h']
+                ts = {'avg_1h': 'promedio una hora',
+                      'avg_6h': 'promedio seis horas',
+                      'avg_12h': 'promedio doce horas',
+                      'avg_24h': 'promedio veinticuatro horas',}
 
-    elif arg == 'today':
-        try:
-            dt = requests.get('https://s3.amazonaws.com/dolartoday/data.json').json()['USD']['dolartoday']
-        except:
-            message = 'no disponible'
-        else:
-            message = 'dolartoday: {} bs/$'.format(dt)
+                l = []
+                for t in ts:
+                    try:
+                        l.append(' {}: {} bs/$'.format(ts[t], '%.2f' % (float(localbtc_ticker_r.json()['VES'][t])/float(usdbtc),)))
+                    except Exception:
+                        pass
 
-    await ctx.send('```{}```'.format(message))
+                ts = ['avg_12h', 'avg_6h', 'avg_1h', 'avg_24h']
+                for t in ts:
+                    try:
+                        PRECIO_DOLAR = float(localbtc_ticker_r.json()['VES'][t])/float(usdbtc)
+                    except Exception:
+                        pass
+
+                message = 'localbitcoins:\n{}'.format('\n'.join(l))
+
+        elif arg == 'today':
+            try:
+                dt = requests.get('https://s3.amazonaws.com/dolartoday/data.json').json()['USD']['dolartoday']
+            except:
+                message = 'no disponible'
+            else:
+                message = 'dolartoday: {} bs/$'.format(dt)
+
+        await ctx.send('```{}```'.format(message))
 
 async def new_eightch_threads():
     await bot.wait_until_ready()
@@ -305,11 +317,52 @@ async def sample_chans():
         with open('chan_sample.json', 'w') as f:
             f.write(json.dumps(sample))
         await asyncio.sleep(CHECK_THREAD_TIME)
+
+async def read():
+    while True:
+        message = input()
+        channel = bot.get_channel(482333951868928006)
+        await channel.send(message)
         
 @bot.event
 async def on_ready():
     bot.loop.create_task(new_eightch_threads())
     bot.loop.create_task(sample_chans())
+#    bot.loop.create_task(read())
+
+def log(message):
+    timestamp = str(datetime.datetime.now())
+    for a in message.attachments:
+        filename = '{} {}'.format(timestamp, a.filename)
+        try:
+            r = requests.get(a.url, stream=True)
+        except Exception as e:
+            logging.error(e)
+        else:
+            with open(os.path.join(settings.media_folder, filename), 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
+
+    urls = set(re.findall('https?://\S*', message.content))
+    for url in urls:
+        filename = '{} URL {}'.format(timestamp, url.replace('/', '_'))
+        try:
+            r = requests.get(url, stream=True)
+        except Exception as e:
+            logging.error(e)
+        else:
+            with open(os.path.join(settings.media_folder, filename), 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
+
+    attachments = ', '.join([a.filename for a in message.attachments])
+    if message.attachments:
+        m = '{} - {} - {} ({}): {}\n'.format(timestamp, message.channel,
+                                             message.author, attachments,
+                                             message.clean_content)
+    else:
+        m = '{} - {} - {}: {}\n'.format(timestamp, message.channel,
+                                        message.author, message.clean_content)
+    with open('chat.log', 'a', encoding='utf8') as f:
+        f.write(m)
 
 @bot.event
 async def on_member_join(member):
@@ -325,26 +378,30 @@ async def on_member_join(member):
 
 @bot.event
 async def on_message(message):
+    print(message.channel.id)
     if message.author != bot.user:
         if 'colomb' in message.content.casefold():
             await message.channel.send('malditos colombianos')
-        MAGIC_WORDS = '^toddy,? ¿?cu(a|á)nto (cuestan|valen|cuesta|vale|sale|salen)'
-        if re.search(MAGIC_WORDS, message.content.casefold()):
-            query = re.sub('^{} (unas|unos|una|un|el|los|las|la)?'.format(MAGIC_WORDS), '', message.content.casefold())
-            query = re.sub('\W*$', '', query)
-            if re.search('m(á|a)s car(a|o)$', query):
-                query = re.sub('m(á|a)s car(a|o)$', '', query)
-                sort = 'desc'
-            elif re.search('m(á|a)s barat(a|o)$', query):
-                query = re.sub('m(á|a)s barat(a|o)$', '', query)
-                sort = 'asc'
-            else:
-                sort = None
-            query = query.lstrip().rstrip()
-            msg = precio(query, sort)
-            await message.channel.send(msg)
-            
-    await bot.process_commands(message)
+#        elif 'toddy' in message.content.casefold():
+#            await message.channel.send(file=discord.File('toddy.png', filename='toddy.png'))
+        if message.channel.name == 'otro':
+            MAGIC_WORDS = '^toddy,? ¿?cu(a|á)nto (cuestan|valen|cuesta|vale|sale|salen)'
+            if re.search(MAGIC_WORDS, message.content.casefold()):
+                query = re.sub('^{} (unas|unos|una|un|el|los|las|la)?'.format(MAGIC_WORDS), '', message.content.casefold())
+                query = re.sub('\W*$', '', query)
+                if re.search('m(á|a)s car(a|o)$', query):
+                    query = re.sub('m(á|a)s car(a|o)$', '', query)
+                    sort = 'desc'
+                elif re.search('m(á|a)s barat(a|o)$', query):
+                    query = re.sub('m(á|a)s barat(a|o)$', '', query)
+                    sort = 'asc'
+                else:
+                    sort = None
+                query = query.lstrip().rstrip()
+                msg = precio(query, sort)
+                await message.channel.send(msg)
+        await bot.process_commands(message)
+#    log(message)
 
 
 bot.run(settings.token)
